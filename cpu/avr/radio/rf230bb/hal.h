@@ -71,6 +71,7 @@
 // RCB_B : RZ200 kit from Atmel based on 1281V
 // ZIGBIT : Zigbit module from Meshnetics
 // ATMEGA128RFA1 : Bare chip with internal radio
+// ATMEGA256RFR2 : Bare chip with internal radio
 // IRIS : IRIS Mote from MEMSIC
 #define RAVENUSB_C      1
 #define RAVEN_D	        2
@@ -78,6 +79,7 @@
 #define ZIGBIT			4
 #define IRIS			5
 #define ATMEGA128RFA1   6
+#define ATMEGA256RFR2   7
 
 #if PLATFORM_TYPE == RCB_B
 /* 1281 rcb */
@@ -142,6 +144,11 @@
 
 #elif PLATFORM_TYPE == ATMEGA128RFA1
 /* ATmega1281 with internal AT86RF231 radio */
+#   define SLPTRPORT  TRXPR
+#   define SLPTRPIN   1
+
+#elif PLATFORM_TYPE == ATMEGA256RFR2
+/* ATmega2564 with internal AT86RF231 radio */
 #   define SLPTRPORT  TRXPR
 #   define SLPTRPIN   1
 
@@ -233,7 +240,7 @@
  *       that the source code can directly use.
  * \{
  */
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
 
 #define hal_set_rst_low( )    ( TRXPR &= ~( 1 << TRXRST ) ) /**< This macro pulls the RST pin low. */
 #define hal_set_rst_high( )   ( TRXPR |= ( 1 << TRXRST ) ) /**< This macro pulls the RST pin high. */
@@ -274,7 +281,7 @@
 #define HAL_DD_SCK            SCKPIN              /**< Data Direction bit for SCK. */
 #define HAL_DD_MOSI           MOSIPIN             /**< Data Direction bit for MOSI. */
 #define HAL_DD_MISO           MISOPIN             /**< Data Direction bit for MISO. */
-#endif /* defined(__AVR_ATmega128RFA1__) */
+#endif /* defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__) */
 
 /** \} */
 
@@ -367,7 +374,7 @@ typedef struct{
 void hal_init( void );
 
 /* Hack for atmega128rfa1 with integrated radio. Access registers directly, not through SPI */
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
 //#define hal_register_read(address) _SFR_MEM8((uint16_t)address)
 #define hal_register_read(address) address
 uint8_t hal_subregister_read( uint16_t address, uint8_t mask, uint8_t position );
