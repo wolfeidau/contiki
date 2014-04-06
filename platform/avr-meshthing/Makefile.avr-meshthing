@@ -3,7 +3,8 @@ CONTIKI_TARGET_DIRS = . apps net loader
 CONTIKI_CORE=contiki-main
 CONTIKI_TARGET_MAIN = ${CONTIKI_CORE}.o
 CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
-#Needed for slip
+
+# Needed for SLIP
 CONTIKI_TARGET_SOURCEFILES += button-sensor.c sensors.c slip_uart0.c slip.c
 
 CONTIKIAVR=$(CONTIKI)/cpu/avr
@@ -14,18 +15,10 @@ CONTIKI_PLAT_DEFS = -DF_CPU=16000000UL -DAUTO_CRC_PADDING=2
 MCU=atmega2564rfr2
 
 AVRDUDE_PROGRAMMER=stk500v2
-
-# For usb devices, you may either use PORT=usb, or (e.g. if you have more than one
-# programmer connected) you can use the following trick to find out the serial number:
-#
-# The example is for an JTAGICE mkII used to program an ATmega128:
-# avrdude -v -P usb:xxxx -c jtag2 -p atmega128
 AVRDUDE_PORT=/dev/ttyUSB0
 AVRDUDE_BAUD=115200
 
-
-# Additional avrdude options
-# Verify off
+# Additional avrdude options: Disable auto-erase. verbose, baud rate
 AVRDUDE_OPTIONS=-D -v -b $(AVRDUDE_BAUD)
 
 include $(CONTIKIAVR)/Makefile.avr
