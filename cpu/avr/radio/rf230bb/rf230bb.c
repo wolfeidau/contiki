@@ -123,7 +123,7 @@ uint8_t ack_pending,ack_seqnum;
 
 /* RF230_CONF_CSMA_RETRIES is number of random-backoff/CCA retries. */
 /* The hardware will accept 0-7, but 802.15.4-2003 only allows 5 maximum */
-/* In RF231/128RFA1, a value of 7 means no CSMA bebofe the Tx. */
+/* In RF231/128RFA1/256RFR2, a value of 7 means no CSMA bebofe the Tx. */
 /* CSMA backoffs are long and can block radio duty cycling
  * over several channel check periods! */
 /* Used only if RF230_CONF_FRAME_RETRIES > 0. */
@@ -212,7 +212,7 @@ static unsigned long total_time_for_transmission, total_transmission_len;
 static int num_transmissions;
 #endif
 
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
 volatile uint8_t rf230_wakewait, rf230_txendwait, rf230_ccawait;
 #endif
 
@@ -461,7 +461,7 @@ radio_set_trx_state(uint8_t new_state)
         /* It is not allowed to go from RX_AACK_ON or TX_AACK_ON and directly to */
         /* TX_AACK_ON or RX_AACK_ON respectively. Need to go via PLL_ON. */
         /* (Old datasheets allowed other transitions, but this code complies with */
-        /* the current specification for RF230, RF231 and 128RFA1.) */
+        /* the current specification for RF230, RF231, 128RFA1 and 256RFR2.) */
         if (((new_state == TX_ARET_ON) && (current_state == RX_AACK_ON)) ||
             ((new_state == RX_AACK_ON) && (current_state == TX_ARET_ON))){
             /* First do intermediate state transition to PLL_ON. */
@@ -542,7 +542,7 @@ radio_on(void)
 #if RF230BB_CONF_LEDONPORTE1
     PORTE|=(1<<PE1); //ledon
 #endif
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
     /* Use the poweron interrupt for delay */
     rf230_wakewait=1;
     {
@@ -894,7 +894,7 @@ rf230_transmit(unsigned short payload_len)
   /* If radio is sleeping we have to turn it on first */
   /* This automatically does the PLL calibrations */
   if (hal_get_slptr()) {
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
 	ENERGEST_ON(ENERGEST_TYPE_LED_RED);
 #if RF230BB_CONF_LEDONPORTE1
     PORTE|=(1<<PE1); //ledon
@@ -1623,7 +1623,7 @@ rf230_cca(void)
 
   /* Start the CCA, wait till done, return result */
   /* Note reading the TRX_STATUS register clears both CCA_STATUS and CCA_DONE bits */
-#if defined(__AVR_ATmega128RFA1__)
+#if defined(__AVR_ATmega128RFA1__) || defined(__AVR_ATmega256RFR2__) || defined(__AVR_ATmega2564RFR2__)
 #if 1  //interrupt method
     /* Disable rx transitions to busy (RX_PDT_BIT) */
     /* Note: for speed this resets rx threshold to the compiled default */
