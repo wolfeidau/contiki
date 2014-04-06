@@ -1,17 +1,20 @@
+PROJECT = wsbridge
 
 CC = gcc
 CFLAGS = -c
-SOURCES = main.c
+SOURCES = $(PROJECT).c
 OBJECTS = $(SOURCES:.c=.o)
-EXE = wsbridge
 
-all: $(SOURCES) $(EXE)
+all: $(PROJECT)
 
-$(EXE): $(OBJECTS)
+$(PROJECT): $(OBJECTS)
 	$(CC) $(OBJECTS) -o $@
 
 %.o:%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm *.o
+	-rm *.o >/dev/null 2>&1
+
+clobber: clean
+	-rm $(PROJECT) >/dev/null 2>&1

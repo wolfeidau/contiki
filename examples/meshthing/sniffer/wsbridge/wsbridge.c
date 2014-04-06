@@ -1,4 +1,12 @@
 /*******************************************************************
+    Copyright (C) 2014 Geekscape
+    All rights reserved.
+
+    Modifications to support the MeshThing sniffer running on Contiki.
+
+*******************************************************************/
+
+/*******************************************************************
     Copyright (C) 2009 FreakLabs
     All rights reserved.
 
@@ -32,10 +40,10 @@
 
 *******************************************************************/
 /*!
-    FreakLabs Freakduino/Wireshark Bridge
+    M9Design MeshThing/Wireshark Bridge
  
-    This program allows data from the Freakduino to be piped into wireshark.
-    When the sniffer firmware is loaded into the Freakduino, then the Freakduino
+    This program allows data from the MeshThing to be piped into wireshark.
+    When the sniffer firmware is loaded into the MeshThing, then the MeshThing
     will be in promiscuous mode and will just dump any frames it sees. This
     program takes the frame dump and sends it into Wireshark for analysis. The
     global header is already set up to inform wireshark that the link layer for
@@ -59,13 +67,14 @@
 
 #define PORTBUFSIZE     32
 #define BUFSIZE         1024
-#define PACKET_FCS      2
+#define PACKET_FCS      1  // 2
 #define DEBUG           1
 #define PIPENAME        "/tmp/wireshark"
 #define BAUDRATE        B115200
 
 enum FSM
 {
+    WAIT_CAPTURE,
     START_CAPTURE,
     PACKET_CAPTURE
 };
@@ -77,14 +86,14 @@ static uint8_t circ_buf[BUFSIZE];
 static uint16_t rd_idx = 0;
 static uint16_t wr_idx = 0;
 static uint8_t len;
-static uint8_t state = START_CAPTURE;
+static uint8_t state = WAIT_CAPTURE;
 static uint8_t file_write = 0;
 static fd_set fds;
 
 /**************************************************************************/
 /*!
-    Open the serial port that we'll be communicating with the Freakduino (sniffer)
-    through.
+    Open the serial port that we'll be communicating with the MeshThing
+    (sniffer) through.
 */
 /**************************************************************************/
 static int serial_open(char *portname)
@@ -102,13 +111,13 @@ static int serial_open(char *portname)
     {
         // set speed of port
         cfsetspeed(&term, BAUDRATE);
+        cfmakeraw(&term);
 
         // set to 8-bits, no parity, 1 stop bit
         term.c_cflag &= ~PARENB;
         term.c_cflag &= ~CSTOPB;
         term.c_cflag &= ~CSIZE;
         term.c_cflag |= CS8;
-
         term.c_cflag |= (CLOCAL | CREAD);
         tcsetattr(FD_com, TCSANOW, &term);
     }
@@ -316,8 +325,7 @@ int main(int argc, char *argv[])
             FD_ZERO(&fds);
             FD_SET(FD_com, &fds);
 
-            printf("Serial port connected. Waiting for wireshark connection.\n");
-            printf("Open wireshark and connect to local interface: %s\n", PIPENAME);
+            printf("Serial port connected. Waiting for packet sniffer.\n");
         }
     }
     else
@@ -326,17 +334,6 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-
-    // create and open pipe for wireshark
-    named_pipe_create(PIPENAME);
-
-    // wait for wireshark to connect to pipe. Once wireshark
-    // connects, then the global header will be written to it.
-    if (FD_pipe != -1)
-    {
-        write_global_hdr();
-        printf("Client connected to pipe.\n");
-    }
 
     for (;;) 
     {
@@ -355,18 +352,41 @@ int main(int argc, char *argv[])
                 {
                     switch (state)
                     {
+                        case WAIT_CAPTURE:
+                            if (port_buf[i] = 0x0a) {
+                              if (i+7 < nbytes) {
+                                if (memcmp(& port_buf[i+1], "Online", 6) == 0) {
+                                  i += 7;
+                                  printf("PACKET SNIFFER READY\n");
+                                  printf("Waiting for wireshark connection.\n");
+                                  printf("Open wireshark and connect to local interface: %s\n", PIPENAME);
+#if 1
+                                  // create and open pipe for wireshark
+                                  named_pipe_create(PIPENAME);
+
+                                  // wait for wireshark to connect to pipe. Once wireshark
+                                  // connects, then the global header will be written to it.
+                                  if (FD_pipe != -1)
+                                  {
+                                      write_global_hdr();
+                                      printf("Client connected to pipe.\n");
+                                  }
+#endif
+                                  state = START_CAPTURE;
+                                }
+                              }
+                            }
+                            break;
+
                         case START_CAPTURE:
                             // new frame starting
                             len = port_buf[i];
+printf("Length: %d\n", len);
                             byte_ctr = 0;
-
-                            printf("Len = %02X.\n", len);
-
                             circ_buf[wr_idx] = len;
                             wr_idx = (wr_idx + 1) % BUFSIZE;
                             state = PACKET_CAPTURE;
                             break;
-
 
                         case PACKET_CAPTURE:
                             // continue capturing bytes until end of frame
@@ -374,19 +394,17 @@ int main(int argc, char *argv[])
                             // write data to circular buffer and increment index
                             circ_buf[wr_idx] = port_buf[i];
 
-                            printf("%02X ", circ_buf[wr_idx]);
-
                             wr_idx = (wr_idx + 1) % BUFSIZE;
 
                             // track number of received bytes. when received bytes
                             // equals frame length, then restart state machine and 
                             // write bytes to wireshark
                             byte_ctr++;
-                            if (byte_ctr == (len - 1))
+//                          if (byte_ctr == (len - 1))
+                            if (byte_ctr == len)
                             {
                                 state = START_CAPTURE;
                                 file_write = 1;
-                                printf("\n");
                             }
                             break;
                     }
