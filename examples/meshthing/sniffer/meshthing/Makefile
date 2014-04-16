@@ -1,5 +1,5 @@
-# Build:    make
-# Instsall: make burn
+# Build:   make
+# Install: make burn
 
 CONTIKI_PROJECT = sniffer
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
