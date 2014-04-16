@@ -28,9 +28,11 @@ In terms of hardware support, the following drivers have been implemented:
     * Random number generator
     * Low Power Modes
     * General-Purpose Timers. NB: GPT0 is in use by the platform code, the remaining GPTs are available for application development.
+    * ADC
   * SmartRF06 EB and BB peripherals
     * LEDs
     * Buttons
+    * ADC sensors (on-chip VDD / 3 and temperature, ambient light sensor)
     * UART connectivity over the XDS100v3 backchannel (EB only)
 
 Requirements
@@ -366,14 +368,6 @@ UART Baud Rate
 By default, the CC2538 UART is configured with a baud rate of 115200. It is easy to increase this to 230400 by changing the value of `UART_CONF_BAUD_RATE` in `contiki-conf.h` or `project-conf.h`.
 
     #define UART_CONF_BAUD_RATE 230400
-
-Currently, this configuration directive only supports values 115200, 230400 and 460800. Custom baud rates can also be achieved by following the steps below:
-
-* Configure `UART_CONF_BAUD_RATE` with an unsupported value to prevent it from auto-choosing values for IBRD and FBRD. For instance, in your project-conf.h you can do:
-
-        #define UART_CONF_BAUD_RATE 0
-
-* Provide custom values for `UART_CONF_IBRD` and `UART_CONF_FBRD` according to the guidelines in the CC2538 User Guide.
 
 RF and USB DMA
 --------------
