@@ -1,0 +1,16 @@
+# Created using "eeprom_layout.c" (MeshThing firmware)
+#
+# This layout is correct for the AVR-based MeshThing running Contiki 2.6.
+# With the exception of the variable length "domain" and "server" name fields.
+# See "eeprom_layout.c".
+
+EEMEM_BEGIN  field_name offset length
+eemem_txpower      0 1
+eemem_panaddr      1 2
+eemem_panid        3 2
+eemem_channelid    5 2
+eemem_nodeid       7 2
+eemem_domain_name  9 0
+eemem_server_name  19 0
+eemem_mac_address  29 8
+EEMEM_END
