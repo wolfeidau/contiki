@@ -23,3 +23,5 @@ AVRDUDE_OPTIONS=-D -v -b $(AVRDUDE_BAUD)
 
 include $(CONTIKIAVR)/Makefile.avr
 include $(CONTIKIAVR)/radio/Makefile.radio
+
+MODULES += core/net/ip core/net/ipv6 core/net/rime core/net core/net/mac core/net/rpl core/net/mac/sicslowmac
