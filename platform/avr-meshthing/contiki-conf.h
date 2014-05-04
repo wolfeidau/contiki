@@ -211,7 +211,9 @@ typedef unsigned short uip_stats_t;
 /* If wait is too short the connection can be reset as a result of multiple fragment reassembly timeouts */
 #define UIP_CONF_WAIT_TIMEOUT    20
 /* 211 bytes per queue buffer */
+#ifndef QUEUEBUF_CONF_NUM
 #define QUEUEBUF_CONF_NUM         8
+#endif
 /* 54 bytes per queue ref buffer */
 #define QUEUEBUF_CONF_REF_NUM     2
 /* Allocate remaining RAM as desired */
@@ -265,7 +267,9 @@ typedef unsigned short uip_stats_t;
 #define SICSLOWPAN_CONF_FRAG      1
 #define SICSLOWPAN_CONF_MAXAGE    3
 /* 211 bytes per queue buffer. Contikimac burst mode needs 15 for a 1280 byte MTU */
+#ifndef QUEUEBUF_CONF_NUM
 #define QUEUEBUF_CONF_NUM         15
+#endif
 /* 54 bytes per queue ref buffer */
 #define QUEUEBUF_CONF_REF_NUM     2
 /* Allocate remaining RAM. Not much left due to queuebuf increase  */
@@ -302,7 +306,9 @@ typedef unsigned short uip_stats_t;
 #define CXMAC_CONF_ANNOUNCEMENTS  0
 #define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE 8
 /* 211 bytes per queue buffer. Burst mode will need 15 for a 1280 byte MTU */
+#ifndef QUEUEBUF_CONF_NUM
 #define QUEUEBUF_CONF_NUM         15
+#endif
 /* 54 bytes per queue ref buffer */
 #define QUEUEBUF_CONF_REF_NUM     2
 /* Allocate remaining RAM. Not much left due to queuebuf increase  */
