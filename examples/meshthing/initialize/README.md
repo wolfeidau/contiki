@@ -5,8 +5,19 @@ Configurable parameters, such as radio channel or MAC address,
 are stored in EEPROM.  This project allows those values to be
 easily updated, without having to re-burn the Contiki firmware.
 
+This project has two "make" targets ...
+
+- eeprom_update: Host side application to read/modify EEPROM hex files
+- eeprom_layout.hex: Contiki firmware to dump EEPROM field addresses
+
 Installation
 ------------
+Create "Makefile.target" to suit your hardware platform.
+
+- vi Makefile.target
+
+  TARGET=avr-meshthing
+
 Create "eeprom.layout" file (once off operation).
 In most cases, the pre-existing "eeprom.layout" file should be fine.
 

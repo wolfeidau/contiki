@@ -41,9 +41,22 @@
 #ifndef CONTIKI_CONF_H_
 #define CONTIKI_CONF_H_
 
+/* Include a project config, which may be defined in the project Makefile */
+
+#ifdef PROJECT_CONF_H
+#include PROJECT_CONF_H
+#endif
+
 /* Platform name, type, and MCU clock rate */
+
+#ifndef PLATFORM_NAME
 #define PLATFORM_NAME  "MeshThing"
+#endif
+
+#ifndef PLATFORM_TYPE
 #define PLATFORM_TYPE  ATMEGA256RFR2
+#endif
+
 #ifndef F_CPU
 #define F_CPU          16000000UL
 #endif
@@ -54,11 +67,12 @@
  * 125 Hz needs slightly more overhead during the interrupt, as does a 32 bit
  * clock_time_t.
  */
- /* Clock ticks per second */
-#define CLOCK_CONF_SECOND 128
+
+#define CLOCK_CONF_SECOND 128  /* Clock ticks per second */
 
 #if 1
 /* 16 bit counter overflows every ~10 minutes */
+
 typedef unsigned short clock_time_t;
 #define CLOCK_LT(a,b)  ((signed short)((a)-(b)) < 0)
 #define INFINITE_TIME 0xffff
@@ -70,7 +84,10 @@ typedef unsigned long clock_time_t;
 #define INFINITE_TIME 0xffffffff
 #endif
 
-/* These routines are not part of the contiki core but can be enabled in cpu/avr/clock.c */
+/* These routines are not part of the contiki core,
+ * but can be enabled in cpu/avr/clock.c
+ */
+
 void clock_delay_msec(uint16_t howlong);
 void clock_adjust_ticks(clock_time_t howmany);
 
@@ -168,11 +185,12 @@ typedef unsigned short uip_stats_t;
 #define UIP_CONF_TCP_SPLIT       1
 #define UIP_CONF_DHCP_LIGHT      1
 
-
 #if 1 /* No radio cycling */
 
 #define NETSTACK_CONF_MAC         nullmac_driver
+#ifndef NETSTACK_CONF_RDC
 #define NETSTACK_CONF_RDC         sicslowmac_driver
+#endif
 #define NETSTACK_CONF_FRAMER      framer_802154
 #define NETSTACK_CONF_RADIO       rf230_driver
 #define CHANNEL_802_15_4          26
@@ -216,12 +234,13 @@ typedef unsigned short uip_stats_t;
 #define UIP_CONF_DS6_MADDR_NBU         0
 #define UIP_CONF_DS6_AADDR_NBU         0
 
-
 #elif 1  /* Contiki-mac radio cycling */
 //#define NETSTACK_CONF_MAC         nullmac_driver
 /* csma needed for burst mode at present. Webserver won't work without it */
 #define NETSTACK_CONF_MAC         csma_driver
+#ifndef NETSTACK_CONF_RDC
 #define NETSTACK_CONF_RDC         contikimac_driver
+#endif
 /* Default is two CCA separated by 500 usec */
 #define NETSTACK_CONF_RDC_CHANNEL_CHECK_RATE   8
 /* Wireshark won't decode with the header, but padded packets will fail ipv6 checksum */
@@ -261,7 +280,6 @@ typedef unsigned short uip_stats_t;
 #define UIP_CONF_DS6_MADDR_NBU    0
 #define UIP_CONF_DS6_AADDR_NBU    0
 
-
 #elif 1  /* cx-mac radio cycling */
 /* RF230 does clear-channel assessment in extended mode (autoretries>0) */
 /* These values are guesses */
@@ -272,7 +290,9 @@ typedef unsigned short uip_stats_t;
 #else
 #define NETSTACK_CONF_MAC         csma_driver
 #endif
+#ifndef NETSTACK_CONF_RDC
 #define NETSTACK_CONF_RDC         cxmac_driver
+#endif
 #define NETSTACK_CONF_FRAMER      framer_802154
 #define NETSTACK_CONF_RADIO       rf230_driver
 #define CHANNEL_802_15_4          26
@@ -330,12 +350,6 @@ typedef unsigned short uip_stats_t;
 #define CLIF
 #ifndef CC_CONF_INLINE
 #define CC_CONF_INLINE inline
-#endif
-
-/* include the project config */
-/* PROJECT_CONF_H might be defined in the project Makefile */
-#ifdef PROJECT_CONF_H
-#include PROJECT_CONF_H
 #endif
 
 #endif /* CONTIKI_CONF_H_ */
