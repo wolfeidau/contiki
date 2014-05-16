@@ -8,6 +8,7 @@
 /* particular purpose. */
 
 
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -111,7 +112,7 @@ char *filename;
 				printf(" %04X to %04X\n", minaddr, maxaddr);
 				return;
 			}
-			if (status == 2) ;  /* begin of file */
+			if (status == 2) {};  /* begin of file */
 		} else {
 			printf("   Error: '%s', line: %d\n", filename, lineno);
 		}
