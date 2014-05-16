@@ -2,6 +2,8 @@
 # Install: make burn
 
 CONTIKI_PROJECT = sniffer
+
+UIP_CONF_IPV6=1
 CFLAGS += -DPROJECT_CONF_H=\"project-conf.h\"
 
 all: $(CONTIKI_PROJECT).hex
