@@ -19,7 +19,7 @@ BAUD=115200
 FILE=eeprom
 FILE_INPUT=$FILE.input
 FILE_OUTPUT=$FILE.output
-MCU=atmega256rfr2
+MCU=atmega2564rfr2
 
 if [ "$1" == "-i" ]; then
   FILE_INPUT=$FILE.default
