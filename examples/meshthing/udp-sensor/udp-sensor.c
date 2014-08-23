@@ -100,7 +100,6 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
   static dhtsample_t sample;
 
   DDRB |= _BV(PINB1); // set PINB1 to output
-  DDRD |= _BV(PIND1); // set PIND1 to output
 
   bool flag = false;
 
@@ -131,22 +130,29 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
       //printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
       //printf("read rssi %x\n", sicslowpan_get_last_rssi());
       //}
-      printf("Pull up.\n");
+      DDRD |= _BV(PIND1); // set PIND1 to output
+      printf("output DDRD %02x\n", DDRD);
+     
       PORTD |= _BV(PIND1); // pull up
+      printf("high PORTD %02x\n", PORTD);
 
       // set the timer
       //etimer_reset(&et_sensor); // waits 250ms
-    }
 
+      clock_delay_usec(50000); // 50ms
+      clock_delay_usec(50000); // 50ms
+      clock_delay_usec(50000); // 50ms
+      clock_delay_usec(50000); // 50ms
+      clock_delay_usec(50000); // 50ms
 
-    if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_sensor)) {
+    //if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_sensor)) {
 
-      printf("Pull low.\n");
       PORTD &= ~(_BV(PIND1)); // pull low
-      
-      DDRD &= ~(_BV(PIND1)); // change to input
+      printf("low PORTD %02x\n", PORTD);
 
       clock_delay_usec(20000); // 20ms
+      DDRD &= ~(_BV(PIND1)); // change to input
+      printf("input DDRD %02x\n", DDRD);
 
       c_seq = 0;
 
@@ -167,8 +173,9 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
       etimer_reset(&et_led);
 
       printf("done\n");
-
     }
+
+    //}
   }
 
   PROCESS_END();
