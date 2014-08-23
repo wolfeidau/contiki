@@ -54,7 +54,7 @@ int dhtRead(void) {
   // PORTD &= ~(0b00000000); // low
   // _delay_ms(20);
 
-  cli();
+ // cli();
   
  // PORTD |= 0x01; // high
 //  _delay_us(40);
@@ -104,7 +104,7 @@ int dhtRead(void) {
     }
 
   }
-  sei();
+ // sei();
   
   /*
   Serial.println(j, DEC);
