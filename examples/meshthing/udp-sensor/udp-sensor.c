@@ -19,12 +19,7 @@
 
 #include <string.h>
 
-#define PROGLED_PORT  PORTB
-#define PROGLED_DDR   DDRB
-#define PROGLED_PIN   PINB1
-
 #define SENSOR_PORT 3000
-
 #define MAX_PAYLOAD_LEN 120
 
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
@@ -64,14 +59,21 @@ tcpip_handler(void)
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
 
     // map containing one element
-    msgpack_pack_map(&pk, 1);
+    msgpack_pack_map(&pk, 2);
 
     // key value
-    msgpack_pack_raw(&pk, 7);
-    msgpack_pack_raw_body(&pk, "example", 7);
+    msgpack_pack_raw(&pk, 3);
+    msgpack_pack_raw_body(&pk, "seq", 3);
 
     // value as int
     msgpack_pack_int(&pk, seq_id);
+    
+    // key value
+    msgpack_pack_raw(&pk, 4);
+    msgpack_pack_raw_body(&pk, "rssi", 4);
+
+    // value as int
+    msgpack_pack_int(&pk, sicslowpan_get_last_rssi());
     
     // send the response
     uip_udp_packet_send(server_conn, sbuf.data, sbuf.size);
@@ -94,8 +96,11 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
 {
   PROCESS_BEGIN();
 
-  static struct etimer et;
+  static struct etimer et_led, et_sensor;
   static dhtsample_t sample;
+
+  DDRB |= _BV(PINB1); // set PINB1 to output
+  DDRD |= _BV(PIND1); // set PIND1 to output
 
   bool flag = false;
 
@@ -107,24 +112,52 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
   // bind to a port for requests.
   udp_bind(server_conn, UIP_HTONS(SENSOR_PORT));
 
-  etimer_set(&et, CLOCK_SECOND * 2);
+  etimer_set(&et_led, CLOCK_SECOND * 1); // Clo
+  etimer_set(&et_sensor, CLOCK_SECOND / 4); // Clo
+
+  static int c_seq;
 
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
       tcpip_handler();
     } 
-    if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et)) {      
-      etimer_reset(&et);
+    if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_led)) {      
+      etimer_reset(&et_led);
 
 
-      PROGLED_PORT ^= (1<<PROGLED_PIN); // Toggle on LED
+      PORTB ^= _BV(PINB1); // Toggle on LED
 
       //if () {
-      dhtAcquire(sample);
-      printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
+      //dhtAcquire(sample);
+      //printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
+      //printf("read rssi %x\n", sicslowpan_get_last_rssi());
       //}
 
+      PORTD |= _BV(PIND1); // pull up
+
+      // set the timer
+      etimer_reset(&et_sensor); // waits 250ms
+
+    }
+
+
+    if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_sensor)) {
+
+      PORTD &= ~(_BV(PIND1)); // pull low
+      clock_delay_usec(20000); // 20ms
+
+      c_seq = 0;
+
+      cli();
+
+      // hit the sensor
+      for (; c_seq < 8; c_seq++) {
+        clock_delay_usec(20);
+        PORTD ^= _BV(PIND1); // Toggle on LED
+      }
+
+      sei();
     }
   }
 
