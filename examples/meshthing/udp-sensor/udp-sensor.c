@@ -96,86 +96,58 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
 {
   PROCESS_BEGIN();
 
-  static struct etimer et_led, et_sensor;
   static dhtsample_t sample;
+  static struct etimer et_led, et_sensor;
+  static bool et_sensor_enabled = false;
 
-  DDRB |= _BV(PINB1); // set PINB1 to output
+  DDRB |= _BV(PINB1);   // LED output mode
+  DDRD |= _BV(PIND1);   // Sensor pin output mode
 
-  bool flag = false;
+  PORTB |= _BV(PINB1);  // LED on
+  PORTD |= _BV(PIND1);  // Sensor pin high
 
   // allocate a dynamic port for each new request
   server_conn = udp_new(NULL, 0, NULL);
 
   printf("UDP server started\n");
 
-  // bind to a port for requests.
   udp_bind(server_conn, UIP_HTONS(SENSOR_PORT));
 
-  etimer_set(&et_led, CLOCK_SECOND * 2); // Clo
-  //etimer_set(&et_sensor, CLOCK_SECOND / 4);
+  etimer_set(&et_led, CLOCK_SECOND * 2);
 
-  static int c_seq;
-
-  while(1) {
+  while(true) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
       tcpip_handler();
     } 
-    if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_led)) {      
+    if (ev == PROCESS_EVENT_TIMER) {
+      if (etimer_expired(&et_led)) {      
+        etimer_reset(&et_led);
 
-      PORTB ^= _BV(PINB1); // Toggle on LED
+        PORTB ^= _BV(PINB1);     // LED toggle
+        PORTD &= ~(_BV(PIND1));  // Sensor pin low
 
-      //if () {
-      //dhtAcquire(sample);
-      //printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
-      //printf("read rssi %x\n", sicslowpan_get_last_rssi());
-      //}
-      DDRD |= _BV(PIND1); // set PIND1 to output
-      printf("output DDRD %02x\n", DDRD);
-     
-      PORTD |= _BV(PIND1); // pull up
-      printf("high PORTD %02x\n", PORTD);
+        etimer_set(&et_sensor, CLOCK_SECOND / 50 + 1);  // At least 20 ms
+        et_sensor_enabled = true;
+      }
 
-      // set the timer
-      //etimer_reset(&et_sensor); // waits 250ms
+      if (et_sensor_enabled && etimer_expired(&et_sensor)) {
+        et_sensor_enabled = false;
 
-      clock_delay_usec(50000); // 50ms
-      clock_delay_usec(50000); // 50ms
-      clock_delay_usec(50000); // 50ms
-      clock_delay_usec(50000); // 50ms
-      clock_delay_usec(50000); // 50ms
+        cli();
+        PORTD |= _BV(PIND1);    // Sensor pin high
+        clock_delay_usec(40);
+        DDRD &= ~(_BV(PIND1));  // Sensor pin input mode
 
-    //if (ev == PROCESS_EVENT_TIMER && etimer_expired(&et_sensor)) {
+        dhtAcquire(sample);
+        sei();
 
-      PORTD &= ~(_BV(PIND1)); // pull low
-      printf("low PORTD %02x\n", PORTD);
+        DDRD  |= _BV(PIND1);  // Sensor pin output mode
+        PORTD |= _BV(PIND1);  // Sensor pin high
 
-      clock_delay_usec(20000); // 20ms
-      DDRD &= ~(_BV(PIND1)); // change to input
-      printf("input DDRD %02x\n", DDRD);
-
-      c_seq = 0;
-
-      printf("read..");
-
-      cli();
-
-      // hit the sensor
-      dhtAcquire(sample);
-      printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
-      // for (; c_seq < 8; c_seq++) {
-      //   clock_delay_usec(20);
-      //   PORTD ^= _BV(PIND1); // Toggle on LED
-      // }
-
-      sei();
-
-      etimer_reset(&et_led);
-
-      printf("done\n");
+        printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
+      }
     }
-
-    //}
   }
 
   PROCESS_END();
