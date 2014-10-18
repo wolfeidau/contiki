@@ -5,5 +5,5 @@ typedef struct
 	float hum, temp;
 } dhtsample_t;
 
-int dhtAcquire(dhtsample_t sample);
+int dhtAcquire(dhtsample_t *sample);
 

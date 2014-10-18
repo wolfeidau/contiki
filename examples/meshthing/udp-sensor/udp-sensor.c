@@ -26,6 +26,7 @@
 #define UIP_UDP_BUF  ((struct uip_udp_hdr *)&uip_buf[UIP_LLH_LEN + UIP_IPH_LEN])
 
 static struct uip_udp_conn *server_conn;
+static dhtsample_t sample;
 
 static void
 tcpip_handler(void)
@@ -51,15 +52,13 @@ tcpip_handler(void)
 
     // set the src port to remote soure port.
     server_conn->rport = UIP_UDP_BUF->srcport;
-
-    //printf("%02x", );
     
     // build the data packet
     msgpack_packer pk;
     msgpack_packer_init(&pk, &sbuf, msgpack_sbuffer_write);
 
     // map containing one element
-    msgpack_pack_map(&pk, 2);
+    msgpack_pack_map(&pk, 4);
 
     // key value
     msgpack_pack_raw(&pk, 3);
@@ -75,6 +74,20 @@ tcpip_handler(void)
     // value as int
     msgpack_pack_int(&pk, sicslowpan_get_last_rssi());
     
+    // key value
+    msgpack_pack_raw(&pk, 3);
+    msgpack_pack_raw_body(&pk, "hum", 3);
+
+    // value as int
+    msgpack_pack_float(&pk, sample.hum);
+
+    // key value
+    msgpack_pack_raw(&pk, 4);
+    msgpack_pack_raw_body(&pk, "temp", 4);
+
+    // value as int
+    msgpack_pack_float(&pk, sample.temp);
+
     // send the response
     uip_udp_packet_send(server_conn, sbuf.data, sbuf.size);
 
@@ -96,12 +109,13 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
 {
   PROCESS_BEGIN();
 
-  static dhtsample_t sample;
   static struct etimer et_led, et_sensor;
   static bool et_sensor_enabled = false;
 
   DDRB |= _BV(PINB1);   // LED output mode
   DDRD |= _BV(PIND1);   // Sensor pin output mode
+
+//  DDRD |= _BV(PIND0);   // TESTING pin to output
 
   PORTB |= _BV(PINB1);  // LED on
   PORTD |= _BV(PIND1);  // Sensor pin high
@@ -136,16 +150,20 @@ PROCESS_THREAD(udp_sensor_process, ev, data)
 
         cli();
         PORTD |= _BV(PIND1);    // Sensor pin high
-        clock_delay_usec(40);
+        
+        clock_delay_usec(40);   // 40 us
+        
         DDRD &= ~(_BV(PIND1));  // Sensor pin input mode
+        PORTD &= ~(_BV(PIND1)); // Sensor pin low (floating)
 
-        dhtAcquire(sample);
+        if (dhtAcquire(&sample)){
+          printf("dhtAcquire is ok.\n");
+        };
         sei();
 
         DDRD  |= _BV(PIND1);  // Sensor pin output mode
         PORTD |= _BV(PIND1);  // Sensor pin high
 
-        printf("Read dht22 sensor %f %f\n", sample.hum, sample.temp);
       }
     }
   }

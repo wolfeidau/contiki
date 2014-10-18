@@ -1,4 +1,5 @@
 CONTIKI_PROJECT = udp-sensor
+LDFLAGS += -Wl,-u,vfprintf -lprintf_flt -lm
 
 UIP_CONF_IPV6=1
 APPS += messagepack

@@ -7,92 +7,45 @@
 #define MAXTIMINGS 85
 #define HIGH 0x1
 
-#define PROGLED_PORT  PORTD
-#define PROGLED_DDR   DDRD
-#define PROGLED_PIN   PD1 // Pin 9
-
-// static struct etimer et;
-// static uint8_t dhtPin; 
-// static uint32_t dhtSampleTime;
-
-// void dhtInitialise(uint8_t pin, uint32_t sampleTime) {
-//   dhtPin = pin;
-//   dhtSampleTime = sampleTime;
-//   PROGLED_DDR |= _BV(PROGLED_PIN);
-// }
-
-//void dhtEnable(bool flag) {
-  // setup timer
-  // if (flag) {
-  //   etimer_set(&et, CLOCK_SECOND * 1 % (CLOCK_SECOND * 16));
-  // }
-
-//}
-
 static uint8_t dhtData[6];
 
 int dhtRead(void) {
 
   uint8_t laststate = HIGH;
-  uint8_t laststate2 = HIGH;
   uint8_t counter = 0;
   uint8_t j = 0, i;
-  uint8_t _count;
+  uint8_t _count = 5;
 
   // clear all the data
-  dhtData[0] = dhtData[1] = dhtData[2] = dhtData[3] = dhtData[4] = 0;
+  dhtData[0] = dhtData[1] = dhtData[2] = dhtData[3] = dhtData[4] = 1;
   
-  // DDRD = 0xFF; // output
+  PORTD &= ~(_BV(PIND0));  // Sensor pin low (floating)
 
-  // // pull the pin high and wait 250 milliseconds
-  // printf("high\n");
-  // PORTD |= 0b00000010; // high
-  // _delay_ms(250);
-
-  // // now pull it low for ~20 milliseconds
-  // printf("low\n");
-  // PORTD &= ~(0b00000000); // low
-  // _delay_ms(20);
-
- // cli();
-  
- // PORTD |= 0x01; // high
-//  _delay_us(40);
-
-  DDRD = 0x00; // input
-  PORTD = 0x02; // high
-  
-  _delay_us(40);
-  
-
-  if (laststate2 != (PIND & _BV(PD1))) {
-    laststate2 = PIND & _BV(PD1);
-    printf("ls2 - %d\n", laststate2);
-  }
-  
   // read in timings
-  for ( i=0; i< MAXTIMINGS; i++) {
-    
+  for ( i=0; i< MAXTIMINGS; i++) {  // 85 timings
+
     counter = 0;
-    
-    while ((PIND & _BV(PD1)) == laststate) {
+
+    while ((PIND & _BV(PD1)) == laststate) { 
       counter++;
-      _delay_us(1);
+//      PORTD |= _BV(PIND0);  // Sensor pin high
+//      _delay_us(1);
+//      PORTD &= ~(_BV(PIND0));  // Sensor pin low (floating)
+      _delay_us(10);
       if (counter == 255) {
         break;
       }
     }
 
-    //printf("first value %d\n", counter);
-
+    //printf("counter %d\n", counter);
     laststate = PIND & _BV(PD1);
 
     if (counter == 255) {
      break;
-      //printf("woops break second\n");
     }
+
     // ignore first 3 transitions
-    if ((i >= 4) && (i%2 == 0)) {
+    if ((i >= 4) && (laststate == 0)) {
 
       // shove each bit into the storage bytes
       dhtData[j/8] <<= 1;
@@ -127,25 +80,32 @@ int dhtRead(void) {
 
 }
 
-int dhtAcquire(dhtsample_t sample) {
+int dhtAcquire(dhtsample_t *sample) {
 
   if (dhtRead()) {
+    
+    printf("dhtRead read ok.\n");
 
-    sample.hum = dhtData[0];
-    sample.hum *= 256;
-    sample.hum += dhtData[1];
-    sample.hum /= 10;
+    sample->hum = dhtData[0];
+    sample->hum *= 256;
+    sample->hum += dhtData[1];
+    sample->hum /= 10;
 
-    sample.temp = dhtData[2] & 0x7F;
-    sample.temp *= 256;
-    sample.temp += dhtData[3];
-    sample.temp /= 10;
+    sample->temp = dhtData[2] & 0x7F;
+    sample->temp *= 256;
+    sample->temp += dhtData[3];
+    sample->temp /= 10;
+
     if (dhtData[2] & 0x80) {
-      sample.temp *= -1;
+      sample->temp *= -1;
     }
+
+    printf("dhtRead %2.1f %2.1f\n", sample->hum, sample->temp);
 
     return 1;
 
   }
+  printf("dhtRead failed.\n");
+
   return 0;
 }
